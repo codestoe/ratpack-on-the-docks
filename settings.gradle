@@ -1,0 +1,2 @@
+rootProject.name = 'rotd'
+include 'abuse', 'arguments', 'client', 'secretary'
