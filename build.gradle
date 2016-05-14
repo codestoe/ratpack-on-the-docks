@@ -3,32 +3,24 @@ plugins {
     id 'io.ratpack.ratpack-groovy' version '1.3.3'
 }
 
-repositories {
-    jcenter()
-}
-
 allprojects {
+    repositories {
+        jcenter()
+    }
+
     group = 'org.10ne.prez'
     version = '1-SNAPSHOT'
-}
-
-subprojects {
 }
 
 configure(':client') {
 
 }
 
-configure(':secretary') {
-
-}
-
-configure(':abuse') {
-
-}
-
-configure(':arguments') {
-
+def servers = [':secretary', ':abuse', ':arguments']
+servers.each {
+    configure(it) {
+        apply plugin: 'io.ratpack.ratpack-groovy'
+    }
 }
 
 idea {
