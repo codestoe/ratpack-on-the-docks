@@ -12,15 +12,11 @@ allprojects {
     version = '1-SNAPSHOT'
 }
 
-configure(':client') {
-
-}
-
-def servers = [':secretary', ':abuse', ':arguments']
-servers.each {
-    configure(it) {
-        apply plugin: 'io.ratpack.ratpack-groovy'
+subprojects {
+    if (it.name == 'client') {
+        return
     }
+    apply plugin: 'io.ratpack.ratpack-groovy'
 }
 
 idea {

@@ -6,7 +6,13 @@ ratpack {
             render 'WHADDAYOU WANT?'
         }
         get('argument') {
-            redirect 302, 'http://localhost:5051'
+            def argumentNodes = System.getenv('ARGUMENT_NODES')
+            println "Found the following argument nodes: $argumentNodes"
+            def splitArgumentNodes = argumentNodes.split(',')
+            def nodeToPick = new Random().nextInt(splitArgumentNodes.size())
+            def nodeUrl = splitArgumentNodes[nodeToPick]
+            println "Picked node: $nodeUrl"
+            render nodeUrl
         }
     }
 }
