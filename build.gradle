@@ -1,5 +1,7 @@
 import com.wiredforcode.gradle.spawn.*
 
+import java.nio.file.Paths
+
 plugins {
     id 'idea'
     id 'groovy'
@@ -26,11 +28,32 @@ subprojects {
     apply plugin: 'com.wiredforcode.spawn'
 
     task startServer(type: SpawnProcessTask, dependsOn: 'shadowJar') {
-        command "java -jar ${projectDir}/build/libs/${project.name}-${project.version}-all.jar"
+        directory = projectDir
+
+        command assembleStartServerCommand(project)
         ready 'Ratpack started'
     }
 
-    task stopServer(type: KillProcessTask)
+    task stopServer(type: KillProcessTask) {
+        directory = projectDir
+    }
+}
+
+task startSuite << {
+    println 'Started service suite'
+}
+
+startSuite.dependsOn {
+    getTasksByName('startServer', true)
+}
+
+
+task stopSuite << {
+    println 'Stopped service suite'
+}
+
+stopSuite.dependsOn {
+    getTasksByName('stopServer', true)
 }
 
 idea {
@@ -39,4 +62,9 @@ idea {
         languageLevel "1.8"
         vcs 'Git'
     }
+}
+
+private String assembleStartServerCommand(projectToStart) {
+    def properties = projectToStart.projectDir.toPath().resolve('env').readLines().collect { "-D$it" }.join(' ')
+    "java $properties -jar ${projectToStart.projectDir}/build/libs/${projectToStart.name}-${projectToStart.version}-all.jar"
 }

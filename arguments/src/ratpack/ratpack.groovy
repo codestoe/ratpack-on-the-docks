@@ -1,6 +1,9 @@
 import static ratpack.groovy.Groovy.ratpack
 
 ratpack {
+    serverConfig {
+        port(System.getProperty('PORT').toInteger())
+    }
     handlers {
         get {
             render 'Hello'
