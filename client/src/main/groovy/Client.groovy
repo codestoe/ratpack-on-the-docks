@@ -10,46 +10,32 @@ import groovyx.net.http.HTTPBuilder
 String secretaryNode = System.getenv('SECRETARY_NODE')
 println "Client: Hello"
 def secretaryClient = new HTTPBuilder(secretaryNode)
-secretaryClient.get([:]) { resp, reader ->
-    assert resp.status == 200
+def secretaryResponse = secretaryClient.get([:]).text
+println "Secretary: ${secretaryResponse}"
 
-    println "Secretary: ${reader.text}"
-    askSecretaryForArgument(secretaryClient)
-}
+println "Client: an argument please"
+def doctorUrl = secretaryClient.get(path: '/argument').text
+println "Secretary: Here you go - ${doctorUrl}"
+println "Client: Thank you"
 
-void askSecretaryForArgument(secretaryClient) {
-    println "Client: an argument please"
-    secretaryClient.get(path: '/argument') { resp, reader ->
-        assert resp.status == 200
-        def doctorUrl = reader.text
-        println "Secretary: Here you go - ${doctorUrl}"
-        println "Client: Thank you"
-
-        goToDoctor(doctorUrl);
-    }
-}
+goToDoctor(doctorUrl);
 
 void goToDoctor(doctorUrl) {
     println "Client: Hello"
     def doctorClient = new HTTPBuilder(doctorUrl)
-    doctorClient.get([:]) { resp, reader ->
-        assert resp.status == 200
-
-        def doctorsGreeting = reader.text
-        println "Doctor: ${doctorsGreeting}"
-        askDoctorForArgument(doctorClient)
-    }
+    def doctorsGreeting = doctorClient.get([:]).text
+    println "Doctor: ${doctorsGreeting}"
+    askDoctorForArgument(doctorClient)
 }
 
 void askDoctorForArgument(doctorClient) {
     println "Client: Is this arguments?"
-    doctorClient.get(path: '/argument') { resp, reader ->
-        assert resp.status == 200
-        def doctorsResponse = reader.text
-        println "Doctor: $doctorsResponse"
+    def doctorsResponse = doctorClient.get(path: '/argument').text
+    println "Doctor: $doctorsResponse"
 
-        if (doctorsResponse.startsWith('http')) {
-            goToDoctor(doctorsResponse);
-        }
+    if (doctorsResponse.startsWith('http')) {
+        goToDoctor(doctorsResponse);
+    } else {
+        println "Client: No you haven't, etc."
     }
 }
