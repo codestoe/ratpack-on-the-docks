@@ -1,0 +1,13 @@
+.git
+gradle*
+.gradle
+src
+out
+jumpstart*
+msvc*
+build/dependency-cache
+build/classes
+build/installShadow
+build/scriptsShadow
+build/resources
+build/tmp
