@@ -1,5 +1,9 @@
 FROM java:jdk-alpine
 
+ARG consulhost
+
+ENV CONSUL_HOST=consulhost
+
 WORKDIR /app
 
 USER daemon

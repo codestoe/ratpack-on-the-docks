@@ -1,3 +1,5 @@
+import groovy.json.JsonSlurper
+
 import static ratpack.groovy.Groovy.ratpack
 
 ratpack {
@@ -6,14 +8,15 @@ ratpack {
             render 'Hello'
         }
         get('argument') {
-//            def argumentNodes = System.getProperty('ARGUMENT_NODES')
-            def argumentNodes = System.getProperty('ABUSE_NODES')
-            println "Found the following argument nodes: $argumentNodes"
-            def splitArgumentNodes = argumentNodes.split(',')
-            def nodeToPick = new Random().nextInt(splitArgumentNodes.size())
-            def nodeUrl = splitArgumentNodes[nodeToPick]
-            println "Picked node: $nodeUrl"
-            render nodeUrl
+            def argumentNode = getArgumentNode()
+            println "Found the following argument node: $argumentNode"
+            render argumentNode
         }
     }
+}
+
+String getArgumentNode() {
+    def consulResponse = new JsonSlurper().parse(new URL('http://192.168.99.100:8500/v1/catalog/service/abuse'))
+    def firstService = consulResponse.first()
+    "http://${firstService.Address}:${firstService.ServicePort}"
 }

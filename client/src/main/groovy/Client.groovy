@@ -7,7 +7,7 @@ import groovyx.net.http.HTTPBuilder
  * Created by noam on 5/22/16.
  */
 
-String secretaryNode = System.getenv('SECRETARY_NODE')
+def secretaryNode = getSecretaryNode()
 println "Client: Hello"
 def secretaryClient = new HTTPBuilder(secretaryNode)
 def secretaryResponse = secretaryClient.get([:]).text
@@ -38,4 +38,11 @@ void askDoctorForArgument(doctorClient) {
     } else {
         println "Client: No you haven't, etc."
     }
+}
+
+String getSecretaryNode() {
+    def consulClient = new HTTPBuilder('http://192.168.99.100:8500')
+    def consulResponse = consulClient.get(path: '/v1/catalog/service/secretary')
+    def firstService = consulResponse.first()
+    "http://${firstService.Address}:${firstService.ServicePort}"
 }
