@@ -1,11 +1,16 @@
-import com.wiredforcode.gradle.spawn.*
+import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
+import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
+import com.bmuschko.gradle.docker.tasks.container.DockerStartContainer
+import com.bmuschko.gradle.docker.tasks.container.DockerStopContainer
+
+import java.nio.file.Paths
 
 plugins {
     id 'idea'
     id 'groovy'
     id 'io.ratpack.ratpack-groovy' version '1.3.3'
     id 'com.github.johnrengelman.shadow' version '1.2.3'
-    id 'com.wiredforcode.spawn' version '0.6.0'
+    id 'com.bmuschko.docker-remote-api' version '2.6.8'
 }
 
 allprojects {
@@ -25,18 +30,76 @@ subprojects {
     }
     apply plugin: 'io.ratpack.ratpack-groovy'
     apply plugin: 'com.github.johnrengelman.shadow'
-    apply plugin: 'com.wiredforcode.spawn'
+    apply plugin: 'com.bmuschko.docker-remote-api'
 
-    task startServer(type: SpawnProcessTask, dependsOn: 'shadowJar') {
-        directory = projectDir
-
-        command assembleStartServerCommand(project)
-        ready 'Ratpack started'
+    docker {
+        url = 'https://192.168.99.100:2376'
+        certPath = new File(System.properties['user.home'], '.docker/machine/machines/dev')
     }
 
-    task stopServer(type: KillProcessTask) {
-        directory = projectDir
+    task buildServiceImage(type: DockerBuildImage) {
+        dependsOn shadowJar
+        inputDir = project.projectDir
+        tag = "noamt/$project.name:$project.version"
     }
+
+    task createServiceContainer(type: DockerCreateContainer) {
+        dependsOn buildServiceImage
+        imageId = buildServiceImage.getTag()
+        portBindings = ['5050']
+    }
+
+    task runService(type: DockerStartContainer) {
+        dependsOn createServiceContainer
+        targetContainerId { createServiceContainer.getContainerId() }
+    }
+
+    task stopService(type: DockerStopContainer) {
+        dependsOn createServiceContainer
+        targetContainerId { createServiceContainer.getContainerId() }
+    }
+}
+
+apply plugin: 'com.bmuschko.docker-remote-api'
+
+docker {
+    url = 'https://192.168.99.100:2376'
+    certPath = new File(System.properties['user.home'], '.docker/machine/machines/dev')
+}
+
+task createConsul(type: DockerCreateContainer) {
+    imageId = 'gliderlabs/consul-server'
+    containerName = 'consul'
+    networkMode = 'host'
+    cmd = ['-bootstrap', '-advertise=192.168.99.100']
+}
+
+task runConsul(type: DockerStartContainer) {
+    dependsOn createConsul
+    targetContainerId { createConsul.getContainerId() }
+}
+
+task stopConsul(type: DockerStopContainer) {
+    dependsOn createConsul
+    targetContainerId { createConsul.getContainerId() }
+}
+
+task createRegistrator(type: DockerCreateContainer) {
+    imageId = 'gliderlabs/registrator'
+    containerName = 'registrator'
+    networkMode = 'host'
+    binds = ['/var/run/docker.sock': '/tmp/docker.sock']
+    cmd = ['consul://192.168.99.100:8500']
+}
+
+task runRegistrator(type: DockerStartContainer) {
+    dependsOn createRegistrator
+    targetContainerId { createRegistrator.getContainerId() }
+}
+
+task stopRegistrator(type: DockerStopContainer) {
+    dependsOn createRegistrator
+    targetContainerId { createRegistrator.getContainerId() }
 }
 
 task startSuite << {
@@ -44,16 +107,15 @@ task startSuite << {
 }
 
 startSuite.dependsOn {
-    getTasksByName('startServer', true)
+    getTasksByName('runConsul', false) + getTasksByName('runRegistrator', false) + getTasksByName('runService', true)
 }
-
 
 task stopSuite << {
     println 'Stopped service suite'
 }
 
 stopSuite.dependsOn {
-    getTasksByName('stopServer', true)
+    getTasksByName('stopService', true) + getTasksByName('stopRegistrator', false) + getTasksByName('stopConsul', false)
 }
 
 idea {
@@ -62,9 +124,4 @@ idea {
         languageLevel "1.8"
         vcs 'Git'
     }
-}
-
-private String assembleStartServerCommand(projectToStart) {
-    def systemProperties = projectToStart.projectDir.toPath().resolve('env').readLines().collect { "-D$it" }.join(' ')
-    "java $systemProperties -jar ${projectToStart.projectDir}/build/libs/${projectToStart.name}-${projectToStart.version}-all.jar"
 }
