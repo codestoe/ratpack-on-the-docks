@@ -45,6 +45,7 @@ subprojects {
         dependsOn buildServiceImage
         imageId = buildServiceImage.getTag()
         portBindings = ['5050']
+        containerName = project.name
     }
 
     task runService(type: DockerStartContainer) {
@@ -53,8 +54,20 @@ subprojects {
     }
 
     task stopService(type: DockerStopContainer) {
-        dependsOn createServiceContainer
-        targetContainerId { createServiceContainer.getContainerId() }
+        containerId = project.name
+    }
+}
+
+project(':client') {
+    apply plugin: 'groovy'
+
+    dependencies {
+        compile 'org.codehaus.groovy:groovy-all:2.4.6'
+    }
+
+    task runScript(dependsOn: 'classes', type: JavaExec) {
+        main = 'Client'
+        classpath = sourceSets.main.runtimeClasspath
     }
 }
 
@@ -78,8 +91,7 @@ task runConsul(type: DockerStartContainer) {
 }
 
 task stopConsul(type: DockerStopContainer) {
-    dependsOn createConsul
-    targetContainerId { createConsul.getContainerId() }
+    containerId = 'consul'
 }
 
 task createRegistrator(type: DockerCreateContainer) {
@@ -96,8 +108,7 @@ task runRegistrator(type: DockerStartContainer) {
 }
 
 task stopRegistrator(type: DockerStopContainer) {
-    dependsOn createRegistrator
-    targetContainerId { createRegistrator.getContainerId() }
+    containerId = 'registrator'
 }
 
 task startSuite << {
