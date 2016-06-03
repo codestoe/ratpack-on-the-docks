@@ -39,6 +39,20 @@ subprojects {
     }
 }
 
+project(':client') {
+    apply plugin: 'groovy'
+
+    dependencies {
+        compile 'org.codehaus.groovy:groovy-all:2.4.6'
+    }
+
+    task runScript(dependsOn: 'classes', type: JavaExec) {
+        systemProperties(SECRETARY_NODE: 'http://localhost:5050')
+        main = 'Client'
+        classpath = sourceSets.main.runtimeClasspath
+    }
+}
+
 task startSuite << {
     println 'Started service suite'
 }
