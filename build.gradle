@@ -65,6 +65,10 @@ idea {
 }
 
 private String assembleStartServerCommand(projectToStart) {
-    def systemProperties = projectToStart.projectDir.toPath().resolve('env').readLines().collect { "-D$it" }.join(' ')
-    "java $systemProperties -jar ${projectToStart.projectDir}/build/libs/${projectToStart.name}-${projectToStart.version}-all.jar"
+    def serviceEnvFile = projectToStart.projectDir.toPath().resolve('env')
+    def systemProperties = serviceEnvFile.readLines().collect { "-D$it" }.join(' ')
+
+    def serviceJarPath = "${projectToStart.projectDir}/build/libs/${projectToStart.name}-${projectToStart.version}-all.jar"
+
+    "java $systemProperties -jar $serviceJarPath"
 }
