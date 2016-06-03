@@ -3,8 +3,6 @@ import com.bmuschko.gradle.docker.tasks.container.DockerCreateContainer
 import com.bmuschko.gradle.docker.tasks.container.DockerStartContainer
 import com.bmuschko.gradle.docker.tasks.container.DockerStopContainer
 
-import java.nio.file.Paths
-
 plugins {
     id 'idea'
     id 'groovy'
